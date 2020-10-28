@@ -1,6 +1,6 @@
 import cv2
 
-class Video():
+class VideoStream():
     def __init__(self):
         self.video = cv2.VideoCapture('Atari-2600_Space-Invaders.mp4')
 

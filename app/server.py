@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from flask import Flask, render_template, Response
-from app.video import Video
+from app import VideoStream
 
 app = Flask(__name__)
 
@@ -17,7 +17,7 @@ def gen(video):
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(Video()),
+    return Response(gen(VideoStream()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
