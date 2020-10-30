@@ -9,5 +9,9 @@ class VideoStream():
     
     def get_frame(self):
         success, frame = self.video.read()
-        ret, jpeg = cv2.imencode('.jpg', frame)
-        return jpeg.tobytes()
+        if success:
+            ret, jpeg = cv2.imencode('.jpg', frame)
+            return jpeg.tobytes()
+        else:
+            # rewind
+            self.video.set(cv2.CAP_PROP_POS_FRAMES, 0)
