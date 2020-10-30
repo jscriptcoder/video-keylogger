@@ -1,13 +1,45 @@
 #!/usr/bin/env python
 
+import cv2
 import time
+from datetime import datetime
 from flask import Flask, render_template, Response, request, jsonify
-from sqlalchemy import create_engine
-from app import VideoStream
+from flask_sqlalchemy import SQLAlchemy
+
 
 app = Flask(__name__)
-mimetype = 'multipart/x-mixed-replace; boundary=frame'
-engine = create_engine('sqlite:///db.sqlite')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./key_frames.db'
+db = SQLAlchemy(app)
+
+
+class KeyFrameModel(db.Model):
+    __tablename__ = 'key_frame'
+
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, default=datetime.now)
+    filename = db.Column(db.String(50))
+    key = db.Column(db.Integer)
+    width = db.Column(db.Integer)
+    height = db.Column(db.Integer)
+    frame = db.Column(db.LargeBinary)
+
+db.create_all() # creates db and table
+
+class VideoStream():
+    def __init__(self):
+        self.video = cv2.VideoCapture('app/Atari-2600_Space-Invaders.mp4')
+
+    def __del__(self):
+        self.video.release()
+    
+    def get_frame(self):
+        success, frame = self.video.read()
+        if success:
+            ret, jpeg = cv2.imencode('.jpg', frame)
+            return jpeg.tobytes()
+        else:
+            # rewind
+            self.video.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
 
 @app.route('/')
@@ -24,7 +56,7 @@ def gen(video):
 @app.route('/video_feed')
 def video_feed():
     try:
-        return Response(gen(VideoStream()), mimetype=mimetype)
+        return Response(gen(VideoStream()), mimetype='multipart/x-mixed-replace; boundary=frame')
     except Exception as err:
         print(err)
 
@@ -33,9 +65,19 @@ def video_key_log():
     key = request.form['key']
     width = request.form['width']
     height = request.form['height']
-    print(request.files.get('frame'))
+    frame = request.files['frame']
+    filename = frame.filename
 
-    return jsonify(key=key)
+    keyFrame = KeyFrameModel(filename=filename, 
+                             key=key, 
+                             width=width, 
+                             height=height, 
+                             frame=frame.read())
+    
+    db.session.add(keyFrame)
+    db.session.commit()
+
+    return jsonify(filename=filename)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
